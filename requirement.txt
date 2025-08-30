@@ -1,3 +1,2 @@
-streamlit
+streamlit>=1.25
 pandas
-streamlit-autorefresh
