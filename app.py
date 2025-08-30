@@ -86,6 +86,7 @@ if uploaded_file is not None:
             st.warning("⚠ 半角英数字で入力してください")
         else:
             if check_answer(answer):
+                # ✅ 正解処理
                 st.success(f"正解！ {current['単語']} 🎉")
                 st.session_state.remaining = [
                     q for q in st.session_state.remaining if q != current
@@ -94,14 +95,17 @@ if uploaded_file is not None:
                 st.session_state.answer = ""
                 st.rerun()
             else:
-                st.warning("不正解です。もう一度入力してください。")
+                # ❌ 不正解処理（再入力なし → 正解表示して次へ）
+                st.error(f"不正解！正解は {current['単語']} です。")
+                st.session_state.current = None
+                st.session_state.answer = ""
+                st.rerun()
 
     # --------------------
     # スキップ機能
     # --------------------
     if st.button("スキップ"):
         st.info(f"スキップしました。正解は {current['単語']} です。")
-        # 不正解扱いで残す
         st.session_state.current = None
         st.session_state.answer = ""
         st.rerun()
