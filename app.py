@@ -6,27 +6,21 @@ import time
 # --------------------
 # タイトル
 # --------------------
-st.title("英単語テスト")
-st.write("意味を見て、単語のスペルを入力してください。")
+st.title("英単語テスト（CSV版）")
+st.write("意味を見て、単語の最初の2文字を入力してください。")
 
 # --------------------
-# ファイルアップロード（Excel or CSV）
+# ファイルアップロード（CSV専用）
 # --------------------
-uploaded_file = st.file_uploader("単語リスト（Excel または CSV）をアップロードしてください", type=["xlsx", "csv"])
+uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8形式）をアップロードしてください", type=["csv"])
 
 if uploaded_file is not None:
-    # Excel or CSV の読み込み
-    if uploaded_file.name.endswith(".xlsx"):
-        df = pd.read_excel(uploaded_file, sheet_name=0)
-    elif uploaded_file.name.endswith(".csv"):
-        try:
-            df = pd.read_csv(uploaded_file, encoding="utf-8")
-        except UnicodeDecodeError:
-            # 万が一のため Shift-JIS にも対応
-            df = pd.read_csv(uploaded_file, encoding="shift-jis")
-    else:
-        st.error("対応しているファイル形式は .xlsx または .csv です。")
-        st.stop()
+    try:
+        # UTF-8を標準に読み込む
+        df = pd.read_csv(uploaded_file, encoding="utf-8")
+    except UnicodeDecodeError:
+        # 万が一Shift-JISで保存された場合
+        df = pd.read_csv(uploaded_file, encoding="shift-jis")
 
     # --------------------
     # セッション状態の初期化
@@ -53,9 +47,9 @@ if uploaded_file is not None:
         st.session_state.hint = ""
 
     def check_answer(ans):
-        """入力が正解か判定"""
+        """入力が正解か判定（最初の2文字でOK）"""
         word = st.session_state.current["単語"]
-        return ans.strip().lower() == word.lower()
+        return word.lower().startswith(ans.strip().lower())
 
     def give_hint():
         """ヒント（最初の1文字）を表示"""
@@ -85,11 +79,11 @@ if uploaded_file is not None:
     # --------------------
     # 回答入力
     # --------------------
-    answer = st.text_input("単語を入力してください (最初の2文字を含めて)", "")
+    answer = st.text_input("単語の最初の2文字を入力してください", "")
 
     if answer:
         if check_answer(answer):
-            st.success("正解！🎉")
+            st.success(f"正解！ {current['単語']} 🎉")
             # 正解した単語をリストから削除
             st.session_state.remaining = [
                 q for q in st.session_state.remaining if q != current
@@ -118,4 +112,4 @@ if uploaded_file is not None:
         st.experimental_rerun()
 
 else:
-    st.info("まずは単語リスト（Excel または CSVファイル）をアップロードしてください。")
+    st.info("まずは単語リスト（CSVファイル, UTF-8形式）をアップロードしてください。")
