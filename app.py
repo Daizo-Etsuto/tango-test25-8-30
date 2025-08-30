@@ -3,14 +3,14 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.title("英単語テスト（CSV版・自動フォーカス版）")
+st.title("英単語テスト（CSV版・安定版）")
 
 uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8推奨）をアップロードしてください", type=["csv"])
 if uploaded_file is None:
     st.info("まずは CSV をアップロードしてください。")
     st.stop()
 
-# CSV読み込み
+# ==== CSV読み込み ====
 try:
     df = pd.read_csv(uploaded_file, encoding="utf-8")
 except UnicodeDecodeError:
@@ -22,16 +22,13 @@ if not {"単語", "意味"}.issubset(df.columns):
 
 # ==== セッション初期化 ====
 ss = st.session_state
-if "remaining" not in ss:
-    ss.remaining = df.to_dict("records")
-if "current" not in ss:
-    ss.current = None
-if "phase" not in ss:
-    ss.phase = "quiz"   # quiz / feedback / done
-if "last_outcome" not in ss:
-    ss.last_outcome = None
+if "remaining" not in ss: ss.remaining = df.to_dict("records")
+if "current" not in ss: ss.current = None
+if "phase" not in ss: ss.phase = "quiz"   # quiz / feedback / done
+if "last_outcome" not in ss: ss.last_outcome = None
 
 def next_question():
+    """次の問題をセット"""
     if not ss.remaining:
         ss.current = None
         ss.phase = "done"
@@ -41,6 +38,7 @@ def next_question():
     ss.last_outcome = None
 
 def check_answer(ans: str) -> bool:
+    """先頭2文字が一致するか"""
     word = ss.current["単語"]
     return word.lower().startswith(ans.strip().lower())
 
@@ -58,20 +56,21 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # 入力欄
+    # 入力欄（画面上部に配置）
     ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
 
-    # JSで自動フォーカス
+    # ---- 自動フォーカス ----
     components.html(
         """
         <script>
-        const input = window.parent.document.querySelector('input[maxlength="2"]');
-        if (input) { input.focus(); input.select(); }
+        const box = window.parent.document.querySelector('input[type="text"]');
+        if (box) { box.focus(); box.select(); }
         </script>
         """,
         height=0,
     )
 
+    # 回答チェック
     if ans and len(ans.strip()) == 2 and ans.isascii():
         if check_answer(ans):
             ss.remaining = [q for q in ss.remaining if q != current]
@@ -96,6 +95,6 @@ if ss.phase == "feedback" and ss.last_outcome:
 
     st.write("下のボタンを押すか、Tabを押してからリターンを押してください。")
 
-    # ✅ 2度押しを防ぐ：押した瞬間に次の問題をセット
+    # ✅ 1回押しで確実に進む
     if st.button("次の問題へ"):
         next_question()
