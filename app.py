@@ -12,11 +12,11 @@ st.write("意味を見て、単語の最初の2文字を入力してください
 # --------------------
 # ファイルアップロード（CSV専用）
 # --------------------
-uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8形式）をアップロードしてください", type=["csv"])
+uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8形式推奨）をアップロードしてください", type=["csv"])
 
 if uploaded_file is not None:
     try:
-        # UTF-8を標準に読み込む
+        # UTF-8を標準で読み込む
         df = pd.read_csv(uploaded_file, encoding="utf-8")
     except UnicodeDecodeError:
         # 万が一Shift-JISで保存された場合
@@ -33,6 +33,8 @@ if uploaded_file is not None:
         st.session_state.start_time = None
     if "hint" not in st.session_state:
         st.session_state.hint = ""
+    if "answer" not in st.session_state:
+        st.session_state.answer = ""  # 入力リセット用
 
     # --------------------
     # 関数定義
@@ -79,7 +81,11 @@ if uploaded_file is not None:
     # --------------------
     # 回答入力
     # --------------------
-    answer = st.text_input("単語の最初の2文字を入力してください", "")
+    answer = st.text_input(
+        "単語の最初の2文字を入力してください",
+        value=st.session_state.answer,
+        key="answer_input"
+    )
 
     if answer:
         if check_answer(answer):
@@ -88,8 +94,10 @@ if uploaded_file is not None:
             st.session_state.remaining = [
                 q for q in st.session_state.remaining if q != current
             ]
+            # 入力リセット
+            st.session_state.answer = ""
             st.session_state.current = None
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.warning("不正解です。もう一度入力してください。")
 
@@ -107,9 +115,11 @@ if uploaded_file is not None:
 
     if elapsed >= 10:
         st.error(f"時間切れ！正解は {current['単語']} です。")
+        # 入力リセット
+        st.session_state.answer = ""
         # 不正解の問題は残す
         st.session_state.current = None
-        st.experimental_rerun()
+        st.rerun()
 
 else:
     st.info("まずは単語リスト（CSVファイル, UTF-8形式）をアップロードしてください。")
