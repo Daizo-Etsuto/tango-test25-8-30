@@ -3,7 +3,7 @@ import random
 import pandas as pd
 import streamlit as st
 
-st.title("英単語テスト（CSV版・安定版）")
+st.title("英単語テスト（CSV版・安定動作版）")
 
 uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8推奨）をアップロードしてください", type=["csv"])
 if uploaded_file is None:
@@ -22,20 +22,92 @@ if not {"単語", "意味"}.issubset(df.columns):
     st.stop()
 
 # ==== セッション初期化 ====
+if "remaining" not in st.session_state:
+    st.session_state.remaining = df.to_dict("records")
+if "current" not in st.session_state:
+    st.session_state.current = None
+if "phase" not in st.session_state:
+    st.session_state.phase = "quiz"
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
+if "hint" not in st.session_state:
+    st.session_state.hint = ""
+if "last_outcome" not in st.session_state:
+    st.session_state.last_outcome = None
+
 ss = st.session_state
-defaults = {
-    "remaining": df.to_dict("records"),
-    "current": None,
-    "phase": "quiz",      # "quiz" / "feedback" / "done"
-    "start_time": None,
-    "hint": "",
-    "last_outcome": None,
-}
-for k, v in defaults.items():
-    if k not in ss:
-        ss[k] = v
 
 def next_question():
     if not ss.remaining:
         ss.current = None
-        ss.ph
+        ss.phase = "done"
+        return
+    ss.current = random.choice(ss.remaining)
+    ss.phase = "quiz"
+    ss.start_time = time.time()
+    ss.hint = ""
+    ss.last_outcome = None
+
+def check_answer(ans: str) -> bool:
+    word = ss.current["単語"]
+    return word.lower().startswith(ans.strip().lower())
+
+# ==== 全問終了 ====
+if ss.phase == "done":
+    st.success("全問正解！お疲れさまでした🎉")
+    st.stop()
+
+# ==== 新しい問題 ====
+if ss.current is None and ss.phase == "quiz":
+    next_question()
+
+# ==== 出題 ====
+if ss.phase == "quiz" and ss.current:
+    current = ss.current
+    st.subheader(f"意味: {current['意味']}")
+
+    ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
+
+    if ans and len(ans.strip()) == 2 and ans.isascii():
+        if check_answer(ans):
+            ss.remaining = [q for q in ss.remaining if q != current]
+            ss.last_outcome = ("correct", current["単語"])
+        else:
+            ss.last_outcome = ("wrong", current["単語"])
+        ss.phase = "feedback"
+
+    # 時間経過チェック
+    elapsed = time.time() - ss.start_time if ss.start_time else 0
+    if elapsed >= 5 and not ss.hint and ss.phase == "quiz":
+        ss.hint = current["単語"][0]
+    if ss.hint and ss.phase == "quiz":
+        st.markdown(f"<p style='margin:2px 0;color:#444;'>ヒント: {ss.hint}</p>", unsafe_allow_html=True)
+    if elapsed >= 15 and ss.phase == "quiz":
+        ss.last_outcome = ("timeout", current["単語"])
+        ss.phase = "feedback"
+
+# ==== フィードバック ====
+if ss.phase == "feedback" and ss.last_outcome:
+    status, word = ss.last_outcome
+
+    # ✅ 行間を詰めた表示
+    if status == "correct":
+        st.markdown(f"<div style='background:#e6ffe6;padding:4px;margin:2px 0;border-radius:4px;'>正解！ {word} 🎉</div>", unsafe_allow_html=True)
+    elif status == "wrong":
+        st.markdown(f"<div style='background:#ffe6e6;padding:4px;margin:2px 0;border-radius:4px;'>不正解！ 正解は {word}</div>", unsafe_allow_html=True)
+    elif status == "timeout":
+        st.markdown(f"<div style='background:#ffe6e6;padding:4px;margin:2px 0;border-radius:4px;'>時間切れ！ 正解は {word}</div>", unsafe_allow_html=True)
+
+    # ✅ 案内文を修正
+    st.write("下のボタンを押すか、Tabを押してからリターンを押してください。")
+
+    if st.button("次の問題へ"):
+        ss.current = None
+        ss.phase = "quiz"
+        ss.hint = ""
+        ss.last_outcome = None
+
+# ==== 終了ボタン ====
+if st.button("終了する"):
+    st.write("テストを終了しました。")
+    st.stop()
