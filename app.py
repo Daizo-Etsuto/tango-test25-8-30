@@ -2,12 +2,11 @@ import time
 import random
 import pandas as pd
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh  # ← モジュール名はこれでOK
 
-# 1秒ごとに再描画（無制限）
-st_autorefresh(interval=1000, limit=0, key="tick")
+# ==== 自動リロード（毎秒） ====
+st.experimental_set_query_params(_=int(time.time()))
 
-st.title("英単語テスト（CSV版・自動ヒント付き）")
+st.title("英単語テスト（CSV版・自動ヒント＋Enter対応）")
 
 uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8推奨）をアップロードしてください", type=["csv"])
 
@@ -21,17 +20,16 @@ try:
 except UnicodeDecodeError:
     df = pd.read_csv(uploaded_file, encoding="shift-jis")
 
-# 必須列確認
 if not {"単語", "意味"}.issubset(df.columns):
-    st.error("CSVには『単語』『意味』の2列（ヘッダー名そのまま）が必要です。")
+    st.error("CSVには『単語』『意味』の列が必要です。")
     st.stop()
 
-# セッション初期化
+# ---- セッション初期化 ----
 ss = st.session_state
 defaults = {
     "remaining": df.to_dict("records"),
     "current": None,
-    "phase": "quiz",      # "quiz" / "feedback" / "done"
+    "phase": "quiz",
     "start_time": None,
     "hint": "",
     "last_outcome": None,
@@ -41,7 +39,6 @@ for k, v in defaults.items():
         ss[k] = v
 
 def next_question():
-    """次の問題へ"""
     if not ss.remaining:
         ss.current = None
         ss.phase = "done"
@@ -56,26 +53,26 @@ def check_answer(ans: str) -> bool:
     word = ss.current["単語"]
     return word.lower().startswith(ans.strip().lower())
 
-# 終了ボタン
+# ---- 終了ボタン ----
 if st.button("終了する"):
     st.write("テストを終了しました。")
     st.stop()
 
-# 全問完了
+# ---- 全問終了 ----
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
     st.stop()
 
-# 問題セット
+# ---- 新しい問題 ----
 if ss.current is None and ss.phase == "quiz":
     next_question()
 
-# 出題フェーズ
+# ---- 出題 ----
 if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # 解答フォーム（Enterで送信）
+    # 解答フォーム（Enterで送信OK）
     with st.form("quiz_form", clear_on_submit=True):
         ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2)
         c1, c2 = st.columns(2)
@@ -97,7 +94,7 @@ if ss.phase == "quiz" and ss.current:
         ss.last_outcome = ("skip", current["単語"])
         ss.phase = "feedback"
 
-    # 時間経過（自動更新で毎秒チェック）
+    # 時間制御（自動リロードで毎秒チェック）
     elapsed = time.time() - ss.start_time if ss.start_time else 0
     if elapsed >= 5 and not ss.hint:
         ss.hint = current["単語"][0]
@@ -107,7 +104,7 @@ if ss.phase == "quiz" and ss.current:
         ss.last_outcome = ("timeout", current["単語"])
         ss.phase = "feedback"
 
-# フィードバックフェーズ
+# ---- フィードバック ----
 if ss.phase == "feedback" and ss.last_outcome:
     status, word = ss.last_outcome
     if status == "correct":
@@ -119,8 +116,9 @@ if ss.phase == "feedback" and ss.last_outcome:
     elif status == "timeout":
         st.error(f"時間切れ！正解は {word}")
 
+    # Enterで進めるフォーム
     with st.form("next_form", clear_on_submit=True):
-        nxt = st.text_input("Enterで次の問題へ", value="")
+        dummy = st.text_input("次へ進むにはEnter（または下のボタン）", value="")
         go = st.form_submit_button("次の問題へ（Enter可）")
     if go:
         ss.current = None
