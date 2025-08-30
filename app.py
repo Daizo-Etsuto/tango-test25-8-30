@@ -2,12 +2,8 @@ import time
 import random
 import pandas as pd
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh  # ✅ 自動更新
 
-# 1秒ごとに自動再描画
-st_autorefresh(interval=1000, key="tick")
-
-st.title("英単語テスト（CSV版・自動ヒント＋Tab→Enter対応）")
+st.title("英単語テスト（CSV版・安定版）")
 
 uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8推奨）をアップロードしてください", type=["csv"])
 if uploaded_file is None:
@@ -78,11 +74,11 @@ if ss.phase == "quiz" and ss.current:
             ss.last_outcome = ("wrong", current["単語"])
         ss.phase = "feedback"
 
-    # 時間制御（自動リフレッシュで毎秒チェック）
+    # 時間経過チェック
     elapsed = time.time() - ss.start_time if ss.start_time else 0
-    if elapsed >= 5 and not ss.hint:
+    if elapsed >= 5 and not ss.hint and ss.phase == "quiz":
         ss.hint = current["単語"][0]
-    if ss.hint:
+    if ss.hint and ss.phase == "quiz":
         st.markdown(f"<p style='margin:2px 0;color:#444;'>ヒント: {ss.hint}</p>", unsafe_allow_html=True)
     if elapsed >= 15 and ss.phase == "quiz":
         ss.last_outcome = ("timeout", current["単語"])
@@ -92,25 +88,7 @@ if ss.phase == "quiz" and ss.current:
 if ss.phase == "feedback" and ss.last_outcome:
     status, word = ss.last_outcome
 
-    # ✅ HTMLでコンパクト表示
+    # ✅ 行間を詰めて表示
     if status == "correct":
         st.markdown(f"<div style='background:#e6ffe6;padding:6px;margin:2px 0;border-radius:6px;'>正解！ {word} 🎉</div>", unsafe_allow_html=True)
-    elif status == "wrong":
-        st.markdown(f"<div style='background:#ffe6e6;padding:6px;margin:2px 0;border-radius:6px;'>不正解！ 正解は {word}</div>", unsafe_allow_html=True)
-    elif status == "timeout":
-        st.markdown(f"<div style='background:#ffe6e6;padding:6px;margin:2px 0;border-radius:6px;'>時間切れ！ 正解は {word}</div>", unsafe_allow_html=True)
-
-    # ✅ 案内文を変更
-    st.write("下のボタンを押すか、Tabを押してからリターンを押してください。")
-
-    # ボタンを下に配置（Tab1回でここにフォーカスする）
-    if st.button("次の問題へ"):
-        ss.current = None
-        ss.phase = "quiz"
-        ss.hint = ""
-        ss.last_outcome = None
-
-# ==== 終了ボタン（最後に配置） ====
-if st.button("終了する"):
-    st.write("テストを終了しました。")
-    st.stop()
+    elif status == "wrong
