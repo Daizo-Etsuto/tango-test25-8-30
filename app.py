@@ -61,9 +61,12 @@ if uploaded_file is not None:
     if ss.current is None and ss.phase == "quiz":
         next_question()
 
-    # ================
+    # 自動リフレッシュ（1秒ごと）
+    st_autorefresh = st.experimental_rerun  # Streamlitの新仕様に置き換え可
+
+    # =================
     # 出題フェーズ
-    # ================
+    # =================
     if ss.phase == "quiz" and ss.current:
         current = ss.current
         st.subheader(f"意味: {current['意味']}")
@@ -95,9 +98,9 @@ if uploaded_file is not None:
             ss.last_outcome = ("timeout", current["単語"])
             ss.phase = "feedback"
 
-    # ================
+    # =================
     # フィードバックフェーズ
-    # ================
+    # =================
     if ss.phase == "feedback" and ss.last_outcome:
         status, word = ss.last_outcome
         if status == "correct":
@@ -109,14 +112,8 @@ if uploaded_file is not None:
         elif status == "timeout":
             st.error(f"時間切れ！正解は {word}")
 
-        # === Enterキー対応（隠し入力欄） ===
-        nxt = st.text_input(
-            "次に進むにはEnterを押すか、下のボタンをクリックしてください",
-            key="next_input"
-        )
-
-        # ボタンでも進める
-        if st.button("次の問題へ") or nxt:
+        # 次へ進む（ボタン or Enter）
+        if st.button("次の問題へ") or ans:
             ss.current = None
             ss.phase = "quiz"
             ss.hint = ""
