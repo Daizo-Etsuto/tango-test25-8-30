@@ -59,7 +59,7 @@ if ss.phase == "quiz" and ss.current:
         ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
         submitted = st.form_submit_button("回答（Enter）")
 
-    # ✅ 自動フォーカス（最初の input を狙う）
+    # ✅ 自動フォーカス
     components.html(
         """
         <script>
@@ -77,7 +77,7 @@ if ss.phase == "quiz" and ss.current:
         else:
             ss.last_outcome = ("wrong", current["単語"])
         ss.phase = "feedback"
-        st.experimental_rerun()  # ✅ ここで即反映
+        st.experimental_rerun()  # ✅ 即反映
 
 # ==== フィードバック ====
 if ss.phase == "feedback" and ss.last_outcome:
@@ -89,4 +89,12 @@ if ss.phase == "feedback" and ss.last_outcome:
         )
     elif status == "wrong":
         st.markdown(
-            f"<div style='background:#ffe6e6;padding:6px;margin:2px 0;border-ra
+            f"<div style='background:#ffe6e6;padding:6px;margin:2px 0;border-radius:6px;'>不正解！ 正解は {word}</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.write("下のボタンを押すか、Tabを押してからリターンを押してください。")
+
+    if st.button("次の問題へ"):
+        next_question()
+        st.experimental_rerun()  # ✅ 1回押しで確実に次へ
