@@ -16,13 +16,12 @@ if uploaded_file is not None:
     except UnicodeDecodeError:
         df = pd.read_csv(uploaded_file, encoding="shift-jis")
 
-    # 必須カラム確認
     if not {"単語", "意味"}.issubset(df.columns):
         st.error("CSVに『単語』『意味』のヘッダーが必要です。例：単語,意味")
         st.stop()
 
     # --------------------
-    # セッション変数を一括初期化
+    # セッション初期化
     # --------------------
     ss = st.session_state
     defaults = {
@@ -32,15 +31,11 @@ if uploaded_file is not None:
         "start_time": None,
         "hint": "",
         "last_outcome": None,
-        "answer_input": ""
     }
     for k, v in defaults.items():
         if k not in ss:
             ss[k] = v
 
-    # --------------------
-    # 関数
-    # --------------------
     def next_question():
         if not ss.remaining:
             ss.current = None
@@ -51,15 +46,11 @@ if uploaded_file is not None:
         ss.start_time = time.time()
         ss.hint = ""
         ss.last_outcome = None
-        ss.answer_input = ""
 
     def check_answer(ans: str) -> bool:
         word = ss.current["単語"]
         return word.lower().startswith(ans.strip().lower())
 
-    # --------------------
-    # UI処理
-    # --------------------
     if st.button("終了する"):
         st.write("テストを終了しました。")
         st.stop()
@@ -78,8 +69,8 @@ if uploaded_file is not None:
 
         ans = st.text_input(
             "最初の2文字を入力してください（半角英数字）",
-            key="answer_input",
-            max_chars=2
+            max_chars=2,
+            key="answer_box"
         )
 
         if ans and ans.isascii():
@@ -94,7 +85,7 @@ if uploaded_file is not None:
             ss.last_outcome = ("skip", current["単語"])
             ss.phase = "feedback"
 
-        # 経過時間判定（操作があったときに反映）
+        # 時間制御
         if ss.start_time:
             elapsed = time.time() - ss.start_time
             if elapsed >= 5 and not ss.hint:
@@ -117,15 +108,10 @@ if uploaded_file is not None:
         elif status == "timeout":
             st.error(f"時間切れ！正解は {word}")
 
-        # 次へ進む操作（ボタン or Enter）
-        if st.button("次の問題へ"):
-            ss.current = None
-            ss.phase = "quiz"
-            ss.hint = ""
-            ss.last_outcome = None
+        # Enterで次に進める → 解答欄がクリアされるので検知できる
+        st.write("次の問題に進むには Enter を押すか、下のボタンを押してください。")
 
-        nxt = st.text_input("Enterを押して次へ", key="next_input")
-        if nxt is not None and nxt != "":
+        if st.button("次の問題へ") or (not st.session_state.answer_box):
             ss.current = None
             ss.phase = "quiz"
             ss.hint = ""
