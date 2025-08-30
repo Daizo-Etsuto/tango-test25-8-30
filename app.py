@@ -3,7 +3,7 @@ import random
 import pandas as pd
 import streamlit as st
 
-st.title("英単語テスト（CSV版・キーボード操作版）")
+st.title("英単語テスト（CSV版・キーボード操作版＋自動フォーカス）")
 
 uploaded_file = st.file_uploader("単語リスト（CSV, UTF-8推奨）をアップロードしてください", type=["csv"])
 
@@ -60,7 +60,7 @@ if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
     st.stop()
 
-# ==== 出題準備 ====
+# ==== 新しい問題 ====
 if ss.current is None and ss.phase == "quiz":
     next_question()
 
@@ -69,8 +69,24 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # 解答入力（2文字）
-    ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2)
+    # 入力欄（HTMLで自動フォーカス）
+    input_html = """
+    <input type="text" id="answer_box" name="answer_box"
+           maxlength="2" style="font-size:20px; width:100px;"
+           autofocus>
+    """
+    ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
+
+    # 強制的にフォーカスを当てるJS
+    st.markdown(
+        """
+        <script>
+        var input = window.parent.document.querySelector('input[id="answer_box"]');
+        if (input) { input.focus(); }
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
 
     if ans and len(ans.strip()) == 2 and ans.isascii():
         if check_answer(ans):
@@ -100,8 +116,7 @@ if ss.phase == "feedback" and ss.last_outcome:
     elif status == "timeout":
         st.error(f"時間切れ！正解は {word}")
 
-    # ボタンにフォーカスしてSpaceキーで進める
-    st.write("次に進むには Spaceキー または 下のボタンを押してください。")
+    # Spaceキーで押せる「次へ」ボタン
     if st.button("次の問題へ"):
         ss.current = None
         ss.phase = "quiz"
