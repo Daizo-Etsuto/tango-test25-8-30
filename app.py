@@ -35,7 +35,7 @@ if uploaded_file is not None:
         ss.last_outcome = None
 
     def next_question():
-        """次の問題を設定"""
+        """次の問題へ"""
         if not ss.remaining:
             ss.current = None
             ss.phase = "done"
@@ -47,7 +47,6 @@ if uploaded_file is not None:
         ss.last_outcome = None
 
     def check_answer(ans: str) -> bool:
-        """先頭2文字一致判定"""
         word = ss.current["単語"]
         return word.lower().startswith(ans.strip().lower())
 
@@ -69,14 +68,12 @@ if uploaded_file is not None:
         current = ss.current
         st.subheader(f"意味: {current['意味']}")
 
-        # 入力欄（2文字, 半角英数字, 小さい幅）
         ans = st.text_input(
-            "最初の2文字を入力してください",
+            "最初の2文字を入力してください（半角英数字）",
             key="answer_input",
             max_chars=2
         )
 
-        # 判定
         if ans and ans.isascii():
             if check_answer(ans):
                 ss.remaining = [q for q in ss.remaining if q != current]
@@ -85,20 +82,16 @@ if uploaded_file is not None:
                 ss.last_outcome = ("wrong", current["単語"])
             ss.phase = "feedback"
 
-        # スキップ
         if st.button("スキップ"):
             ss.last_outcome = ("skip", current["単語"])
             ss.phase = "feedback"
 
-        # 経過時間
         elapsed = time.time() - ss.start_time
         if elapsed >= 5 and not ss.hint:
             ss.hint = current['単語'][0]
-
         if ss.hint:
             st.info(f"ヒント: {ss.hint}")
-
-        if elapsed >= 15:  # ← ★ 15秒に変更
+        if elapsed >= 15:
             ss.last_outcome = ("timeout", current["単語"])
             ss.phase = "feedback"
 
@@ -116,9 +109,14 @@ if uploaded_file is not None:
         elif status == "timeout":
             st.error(f"時間切れ！正解は {word}")
 
-        # === Enterキーで次の問題へ ===
-        nxt = st.text_input("次に進むには Enter を押してください", key="next_input")
-        if nxt is not None:  # 何か入力してEnter押されたら次へ
+        # === Enterキー対応（隠し入力欄） ===
+        nxt = st.text_input(
+            "次に進むにはEnterを押すか、下のボタンをクリックしてください",
+            key="next_input"
+        )
+
+        # ボタンでも進める
+        if st.button("次の問題へ") or nxt:
             ss.current = None
             ss.phase = "quiz"
             ss.hint = ""
