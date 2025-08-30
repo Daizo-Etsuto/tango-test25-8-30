@@ -11,7 +11,7 @@ if uploaded_file is None:
     st.info("まずは CSV をアップロードしてください。")
     st.stop()
 
-# CSV読み込み
+# CSV読込
 try:
     df = pd.read_csv(uploaded_file, encoding="utf-8")
 except UnicodeDecodeError:
@@ -70,49 +70,35 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # 解答欄（2文字・半角英数字）
-    # NOTE: ラベル文言はフォーカス用JSが参照するので変更しないでください
-    ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
+    # 入力欄（行間を詰めるためにコンテナで囲む）
+    with st.container():
+        ans = st.text_input(
+            "最初の2文字を入力（半角英数字）",
+            max_chars=2,
+            key="answer_box",
+            label_visibility="visible"
+        )
 
-    # ---- 自動フォーカス（堅牢版：複数セレクタ＆リトライ）----
+    # ---- 自動フォーカス ----
     components.html(
         """
         <script>
         (function focusAnswer(){
           const tryFocus = () => {
-            // 1) ラベル一致で探索
-            const labels = window.parent.document.querySelectorAll('label');
-            for (const lb of labels) {
-              if (lb.innerText && lb.innerText.trim().includes("最初の2文字を入力（半角英数字）")) {
-                const inp = lb.parentElement.querySelector('input');
-                if (inp) { inp.focus(); inp.select(); return true; }
-              }
-            }
-            // 2) data-testid を使って TextInput 内の input を探索
-            const cand = window.parent.document.querySelectorAll('[data-testid="stTextInput"] input');
-            for (const el of cand) {
-              const aria = el.getAttribute('aria-label') || '';
-              if (aria.includes("最初の2文字を入力（半角英数字）")) {
-                el.focus(); el.select(); return true;
-              }
-            }
-            // 3) maxlength=2 の input から推定（ページ内で唯一想定）
             const two = window.parent.document.querySelector('input[maxlength="2"]');
             if (two) { two.focus(); two.select(); return true; }
             return false;
           };
-          // 初回＋遅延で数回リトライ（描画タイミング差異対策）
           setTimeout(tryFocus, 0);
-          setTimeout(tryFocus, 120);
-          setTimeout(tryFocus, 300);
-          setTimeout(tryFocus, 600);
+          setTimeout(tryFocus, 200);
+          setTimeout(tryFocus, 500);
         })();
         </script>
         """,
         height=0, scrolling=False
     )
 
-    # 回答確定（Enterで送信）
+    # 回答処理
     if ans and len(ans.strip()) == 2 and ans.isascii():
         if check_answer(ans):
             ss.remaining = [q for q in ss.remaining if q != current]
@@ -121,15 +107,16 @@ if ss.phase == "quiz" and ss.current:
             ss.last_outcome = ("wrong", current["単語"])
         ss.phase = "feedback"
 
-    # 時間経過チェック（※完全自動にしたい場合は後述オプション参照）
+    # 時間経過チェック（正解時は無効化するため quiz フェーズのみ）
     elapsed = time.time() - ss.start_time if ss.start_time else 0
-    if elapsed >= 5 and not ss.hint:
-        ss.hint = current["単語"][0]
-    if ss.hint:
-        st.info(f"ヒント: {ss.hint}")
-    if elapsed >= 15 and ss.phase == "quiz":
-        ss.last_outcome = ("timeout", current["単語"])
-        ss.phase = "feedback"
+    if ss.phase == "quiz":
+        if elapsed >= 5 and not ss.hint:
+            ss.hint = current["単語"][0]
+        if ss.hint:
+            st.markdown(f"<p style='margin:0;color:#444;'>ヒント: {ss.hint}</p>", unsafe_allow_html=True)
+        if elapsed >= 15:
+            ss.last_outcome = ("timeout", current["単語"])
+            ss.phase = "feedback"
 
 # ===== フィードバック =====
 if ss.phase == "feedback" and ss.last_outcome:
@@ -141,7 +128,9 @@ if ss.phase == "feedback" and ss.last_outcome:
     elif status == "timeout":
         st.error(f"時間切れ！正解は {word}")
 
-    st.write("次へ進むには Space（ボタンにフォーカス）または下のボタンを押してください。")
+    # ✅ メッセージを修正
+    st.write("下のボタンを押すか、Tabを押してからリターンを押してください。")
+
     if st.button("次の問題へ"):
         ss.current = None
         ss.phase = "quiz"
