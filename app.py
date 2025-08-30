@@ -54,10 +54,10 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # ✅ フォームで囲んでレイアウト崩れ防止
+    # ✅ フォームで囲んでレイアウト安定
     with st.form("answer_form", clear_on_submit=True):
         ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
-        submitted = st.form_submit_button("回答（Enter）")
+        submitted = st.form_submit_button("解答（Enter）")  # ← 修正ポイント
 
     # ✅ 自動フォーカス
     components.html(
@@ -77,7 +77,7 @@ if ss.phase == "quiz" and ss.current:
         else:
             ss.last_outcome = ("wrong", current["単語"])
         ss.phase = "feedback"
-        st.experimental_rerun()  # ✅ 即反映
+        st.rerun()  # ✅ 新仕様
 
 # ==== フィードバック ====
 if ss.phase == "feedback" and ss.last_outcome:
@@ -97,4 +97,4 @@ if ss.phase == "feedback" and ss.last_outcome:
 
     if st.button("次の問題へ"):
         next_question()
-        st.experimental_rerun()  # ✅ 1回押しで確実に次へ
+        st.rerun()
