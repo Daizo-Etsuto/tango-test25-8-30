@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import random
 import time
+from streamlit_autorefresh import st_autorefresh
+
+# 1秒ごとに自動更新（キー指定でリセットされないようにする）
+st_autorefresh(interval=1000, key="auto_refresh")
 
 st.title("英単語テスト（CSV版・安定動作）")
 
@@ -61,12 +65,9 @@ if uploaded_file is not None:
     if ss.current is None and ss.phase == "quiz":
         next_question()
 
-    # 自動リフレッシュ（1秒ごと）
-    st_autorefresh = st.experimental_rerun  # Streamlitの新仕様に置き換え可
-
-    # =================
+    # ================
     # 出題フェーズ
-    # =================
+    # ================
     if ss.phase == "quiz" and ss.current:
         current = ss.current
         st.subheader(f"意味: {current['意味']}")
@@ -98,9 +99,9 @@ if uploaded_file is not None:
             ss.last_outcome = ("timeout", current["単語"])
             ss.phase = "feedback"
 
-    # =================
+    # ================
     # フィードバックフェーズ
-    # =================
+    # ================
     if ss.phase == "feedback" and ss.last_outcome:
         status, word = ss.last_outcome
         if status == "correct":
@@ -112,8 +113,16 @@ if uploaded_file is not None:
         elif status == "timeout":
             st.error(f"時間切れ！正解は {word}")
 
-        # 次へ進む（ボタン or Enter）
-        if st.button("次の問題へ") or ans:
+        # === 進行操作 ===
+        # 1. ボタン
+        if st.button("次の問題へ"):
+            ss.current = None
+            ss.phase = "quiz"
+            ss.hint = ""
+            ss.last_outcome = None
+
+        # 2. Enterキー（解答欄が残っている場合に検出）
+        if ans:
             ss.current = None
             ss.phase = "quiz"
             ss.hint = ""
