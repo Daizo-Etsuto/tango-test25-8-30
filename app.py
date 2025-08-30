@@ -2,12 +2,8 @@ import streamlit as st
 import pandas as pd
 import random
 import time
-from streamlit_autorefresh import st_autorefresh
 
-# 1秒ごとに自動更新（キー指定でリセットされないようにする）
-st_autorefresh(interval=1000, key="auto_refresh")
-
-st.title("英単語テスト（CSV版・安定動作）")
+st.title("英単語テスト（CSV版・安定版）")
 
 uploaded_file = st.file_uploader(
     "単語リスト（CSV, UTF-8形式推奨）をアップロードしてください",
@@ -20,26 +16,32 @@ if uploaded_file is not None:
     except UnicodeDecodeError:
         df = pd.read_csv(uploaded_file, encoding="shift-jis")
 
+    # 必須カラム確認
     if not {"単語", "意味"}.issubset(df.columns):
         st.error("CSVに『単語』『意味』のヘッダーが必要です。例：単語,意味")
         st.stop()
 
+    # --------------------
+    # セッション変数を一括初期化
+    # --------------------
     ss = st.session_state
-    if "remaining" not in ss:
-        ss.remaining = df.to_dict("records")
-    if "current" not in ss:
-        ss.current = None
-    if "phase" not in ss:
-        ss.phase = "quiz"
-    if "start_time" not in ss:
-        ss.start_time = None
-    if "hint" not in ss:
-        ss.hint = ""
-    if "last_outcome" not in ss:
-        ss.last_outcome = None
+    defaults = {
+        "remaining": df.to_dict("records"),
+        "current": None,
+        "phase": "quiz",          # quiz / feedback / done
+        "start_time": None,
+        "hint": "",
+        "last_outcome": None,
+        "answer_input": ""
+    }
+    for k, v in defaults.items():
+        if k not in ss:
+            ss[k] = v
 
+    # --------------------
+    # 関数
+    # --------------------
     def next_question():
-        """次の問題へ"""
         if not ss.remaining:
             ss.current = None
             ss.phase = "done"
@@ -49,11 +51,15 @@ if uploaded_file is not None:
         ss.start_time = time.time()
         ss.hint = ""
         ss.last_outcome = None
+        ss.answer_input = ""
 
     def check_answer(ans: str) -> bool:
         word = ss.current["単語"]
         return word.lower().startswith(ans.strip().lower())
 
+    # --------------------
+    # UI処理
+    # --------------------
     if st.button("終了する"):
         st.write("テストを終了しました。")
         st.stop()
@@ -65,9 +71,7 @@ if uploaded_file is not None:
     if ss.current is None and ss.phase == "quiz":
         next_question()
 
-    # ================
     # 出題フェーズ
-    # ================
     if ss.phase == "quiz" and ss.current:
         current = ss.current
         st.subheader(f"意味: {current['意味']}")
@@ -90,18 +94,18 @@ if uploaded_file is not None:
             ss.last_outcome = ("skip", current["単語"])
             ss.phase = "feedback"
 
-        elapsed = time.time() - ss.start_time
-        if elapsed >= 5 and not ss.hint:
-            ss.hint = current['単語'][0]
-        if ss.hint:
-            st.info(f"ヒント: {ss.hint}")
-        if elapsed >= 15:
-            ss.last_outcome = ("timeout", current["単語"])
-            ss.phase = "feedback"
+        # 経過時間判定（手動更新時に反映）
+        if ss.start_time:
+            elapsed = time.time() - ss.start_time
+            if elapsed >= 5 and not ss.hint:
+                ss.hint = current['単語'][0]
+            if ss.hint:
+                st.info(f"ヒント: {ss.hint}")
+            if elapsed >= 15:
+                ss.last_outcome = ("timeout", current["単語"])
+                ss.phase = "feedback"
 
-    # ================
     # フィードバックフェーズ
-    # ================
     if ss.phase == "feedback" and ss.last_outcome:
         status, word = ss.last_outcome
         if status == "correct":
@@ -113,20 +117,7 @@ if uploaded_file is not None:
         elif status == "timeout":
             st.error(f"時間切れ！正解は {word}")
 
-        # === 進行操作 ===
-        # 1. ボタン
-        if st.button("次の問題へ"):
-            ss.current = None
-            ss.phase = "quiz"
-            ss.hint = ""
-            ss.last_outcome = None
-
-        # 2. Enterキー（解答欄が残っている場合に検出）
-        if ans:
-            ss.current = None
-            ss.phase = "quiz"
-            ss.hint = ""
-            ss.last_outcome = None
-
-else:
-    st.info("まずは単語リスト（CSVファイル, UTF-8形式）をアップロードしてください。")
+        # 次へ進む操作（ボタン or Enter）
+        col1, col2 = st.columns([1,2])
+        with col1:
+            if st.button("次の問題へ"):
