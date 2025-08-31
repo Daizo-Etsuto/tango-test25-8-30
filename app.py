@@ -1,15 +1,12 @@
 import random
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 
 st.title("英単語テスト（CSV版・学習ログ付き）")
 
-# ==== Google Sheets に接続 ====
-def get_worksheet():
 # ==== Google Sheets に接続 ====
 def get_worksheet():
     creds = Credentials.from_service_account_info(
@@ -145,5 +142,6 @@ if ss.phase == "feedback" and ss.last_outcome:
     if st.button("次の問題へ"):
         next_question()
         st.rerun()
+
 
 
