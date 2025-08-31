@@ -44,6 +44,21 @@ def check_answer(ans: str) -> bool:
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
 
+    col1, col2 = st.columns(2)
+    with col1:
+        # ✅ 再スタートボタン
+        if st.button("再スタート"):
+            ss.remaining = df.to_dict("records")
+            ss.current = None
+            ss.phase = "quiz"
+            ss.last_outcome = None
+            st.rerun()
+
+    with col2:
+        # ✅ 終了ボタン
+        if st.button("アプリを閉じる"):
+            st.stop()
+
 # ==== 新しい問題 ====
 elif ss.current is None and ss.phase == "quiz":
     next_question()
@@ -76,6 +91,11 @@ if ss.phase == "quiz" and ss.current:
         ss.phase = "feedback"
         st.rerun()
 
+    # ✅ 出題中の終了ボタン（入力欄の下）
+    st.markdown("---")
+    if st.button("アプリを閉じる"):
+        st.stop()
+
 # ==== フィードバック ====
 if ss.phase == "feedback" and ss.last_outcome:
     status, word = ss.last_outcome
@@ -92,45 +112,11 @@ if ss.phase == "feedback" and ss.last_outcome:
 
     st.write("下のボタンを押すか、Tabを押してからリターンを押してください。")
 
-    if st.button("次の問題へ"):
-        next_question()
-        st.rerun()
-
-# ==== ✅ 画面下に固定された終了ボタン（青系・本当に終了できる） ====
-st.markdown(
-    """
-    <style>
-    .close-btn-container {
-        position: fixed;
-        bottom: 10px;
-        left: 0;
-        width: 100%;
-        text-align: center;
-        background: white;
-        padding: 10px;
-        border-top: 1px solid #ccc;
-        z-index: 1000;
-    }
-    .close-btn-container button {
-        background: #2b6cb0 !important;
-        color: white !important;
-        padding: 10px 20px !important;
-        border: none !important;
-        border-radius: 8px !important;
-        font-size: 16px !important;
-        cursor: pointer !important;
-    }
-    .close-btn-container button:hover {
-        background: #1e4e8c !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# container に st.button を入れる
-with st.container():
-    st.markdown('<div class="close-btn-container">', unsafe_allow_html=True)
-    if st.button("アプリを閉じる"):
-        st.stop()
-    st.markdown('</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("次の問題へ"):
+            next_question()
+            st.rerun()
+    with col2:
+        if st.button("アプリを閉じる"):
+            st.stop()
