@@ -10,13 +10,26 @@ st.title("英単語テスト（CSV版・学習ログ付き）")
 
 # ==== Google Sheets に接続 ====
 def get_worksheet():
-# ログ記録前に一行テスト書き込み
+# ==== Google Sheets に接続 ====
+def get_worksheet():
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    client = gspread.authorize(creds)
+    SPREADSHEET_ID = "1x_s58xCJco6c-mAC5AiwVf_Jg0XJb1mImaIcwXlXKvI"
+    sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+    return sheet
+
+
+# ==== 接続テスト ====
 try:
     sheet = get_worksheet()
     sheet.append_row(["TEST", "0000000", "テスト単語", "接続OK"])
-    st.info("Google Sheets 書き込みテスト：成功しました！")
+    st.info("✅ Google Sheets 書き込みテスト：成功しました！")
 except Exception as e:
-    st.error(f"Google Sheets 書き込みテスト：失敗しました。エラー：{e}")
+    st.error(f"❌ Google Sheets 書き込みテスト：失敗しました。エラー：{e}")
+
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"],
         scopes=["https://www.googleapis.com/auth/spreadsheets"]
@@ -132,4 +145,5 @@ if ss.phase == "feedback" and ss.last_outcome:
     if st.button("次の問題へ"):
         next_question()
         st.rerun()
+
 
