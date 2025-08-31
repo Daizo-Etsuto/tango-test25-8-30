@@ -96,35 +96,41 @@ if ss.phase == "feedback" and ss.last_outcome:
         next_question()
         st.rerun()
 
-# ==== ✅ 画面下に固定された終了ボタン（青系） ====
-components.html(
+# ==== ✅ 画面下に固定された終了ボタン（青系・本当に終了できる） ====
+st.markdown(
     """
-    <div style="
-        position:fixed;
-        bottom:10px;
-        left:0;
-        width:100%;
-        text-align:center;
+    <style>
+    .close-btn-container {
+        position: fixed;
+        bottom: 10px;
+        left: 0;
+        width: 100%;
+        text-align: center;
         background: white;
-        padding:10px;
+        padding: 10px;
         border-top: 1px solid #ccc;
-        z-index:1000;">
-        <form action="" method="get">
-            <input type="submit" value="アプリを閉じる" 
-                   style="background:#2b6cb0;color:white;padding:10px 20px;
-                          border:none;border-radius:8px;font-size:16px;
-                          cursor:pointer;">
-        </form>
-        <style>
-        input[type=submit]:hover {
-            background:#1e4e8c;
-        }
-        </style>
-    </div>
+        z-index: 1000;
+    }
+    .close-btn-container button {
+        background: #2b6cb0 !important;
+        color: white !important;
+        padding: 10px 20px !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 16px !important;
+        cursor: pointer !important;
+    }
+    .close-btn-container button:hover {
+        background: #1e4e8c !important;
+    }
+    </style>
     """,
-    height=70,
+    unsafe_allow_html=True,
 )
 
-# ボタンクリックをStreamlit側で処理
-if "アプリを閉じる" in st.session_state:
-    st.stop()
+# container に st.button を入れる
+with st.container():
+    st.markdown('<div class="close-btn-container">', unsafe_allow_html=True)
+    if st.button("アプリを閉じる"):
+        st.stop()
+    st.markdown('</div>', unsafe_allow_html=True)
