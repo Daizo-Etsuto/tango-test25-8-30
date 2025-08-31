@@ -1,13 +1,9 @@
-import random
-import pandas as pd
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime
 
-st.title("英単語テスト（CSV版・学習ログ付き）")
+st.title("テスト用")
 
-# ==== Google Sheets に接続 ====
 def get_worksheet():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"],
@@ -16,18 +12,14 @@ def get_worksheet():
     client = gspread.authorize(creds)
     SPREADSHEET_ID = "1x_s58xCJco6c-mAC5AiwVf_Jg0XJb1mImaIcwXlXKvI"
     sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-    return sheet  # ← この return は必ず関数の中（インデント4つ）
+    return sheet
 
-
-# ==== 接続テスト ====
 try:
     sheet = get_worksheet()
     sheet.append_row(["TEST", "0000000", "テスト単語", "接続OK"])
-    st.info("✅ Google Sheets 書き込みテスト：成功しました！")
+    st.success("✅ 書き込み成功！")
 except Exception as e:
-    st.error(f"❌ Google Sheets 書き込みテスト：失敗しました。エラー：{e}")
-
-
+    st.error(f"❌ 書き込み失敗: {e}")
 
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"],
@@ -144,6 +136,7 @@ if ss.phase == "feedback" and ss.last_outcome:
     if st.button("次の問題へ"):
         next_question()
         st.rerun()
+
 
 
 
