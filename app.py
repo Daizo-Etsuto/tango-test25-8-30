@@ -21,7 +21,6 @@ try:
 except Exception as e:
     st.error(f"❌ 書き込み失敗: {e}")
 
-
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"],
         scopes=["https://www.googleapis.com/auth/spreadsheets"]
@@ -137,6 +136,7 @@ if ss.phase == "feedback" and ss.last_outcome:
     if st.button("次の問題へ"):
         next_question()
         st.rerun()
+
 
 
 
