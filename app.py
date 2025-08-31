@@ -43,8 +43,11 @@ def check_answer(ans: str) -> bool:
 # ==== 全問終了 ====
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
-    st.stop()
 
+    if st.button("終了する"):
+        st.stop()  # ← Streamlitアプリを終了させる
+
+    st.stop()
 # ==== 新しい問題 ====
 if ss.current is None and ss.phase == "quiz":
     next_question()
@@ -98,3 +101,4 @@ if ss.phase == "feedback" and ss.last_outcome:
     if st.button("次の問題へ"):
         next_question()
         st.rerun()
+
