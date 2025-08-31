@@ -16,7 +16,7 @@ def get_worksheet():
     client = gspread.authorize(creds)
     SPREADSHEET_ID = "1x_s58xCJco6c-mAC5AiwVf_Jg0XJb1mImaIcwXlXKvI"
     sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-    return sheet
+    return sheet   # 👈 ← インデントを関数内に揃える
 
 
 # ==== 接続テスト ====
@@ -26,6 +26,7 @@ try:
     st.info("✅ Google Sheets 書き込みテスト：成功しました！")
 except Exception as e:
     st.error(f"❌ Google Sheets 書き込みテスト：失敗しました。エラー：{e}")
+
 
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"],
@@ -142,6 +143,7 @@ if ss.phase == "feedback" and ss.last_outcome:
     if st.button("次の問題へ"):
         next_question()
         st.rerun()
+
 
 
 
