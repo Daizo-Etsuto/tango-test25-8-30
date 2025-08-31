@@ -54,7 +54,7 @@ if uploaded_file is None:
 try:
     df = pd.read_csv(uploaded_file, encoding="utf-8")
 except UnicodeDecodeError:
-    df = pd.read_csv(uploaded_file, encoding="shift-jis")
+　  df = pd.read_csv(uploaded_file, encoding="shift-jis")
 
 if not {"単語", "意味"}.issubset(df.columns):
     st.error("CSVには『単語』『意味』列が必要です。")
@@ -136,6 +136,7 @@ if ss.phase == "feedback" and ss.last_outcome:
     if st.button("次の問題へ"):
         next_question()
         st.rerun()
+
 
 
 
