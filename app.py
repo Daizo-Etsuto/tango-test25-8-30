@@ -44,12 +44,8 @@ def check_answer(ans: str) -> bool:
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
 
-    if st.button("終了する"):
-        st.stop()  # ← Streamlitアプリを終了させる
-
-    st.stop()
 # ==== 新しい問題 ====
-if ss.current is None and ss.phase == "quiz":
+elif ss.current is None and ss.phase == "quiz":
     next_question()
 
 # ==== 出題 ====
@@ -57,12 +53,10 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # ✅ フォームで囲んでレイアウト安定
     with st.form("answer_form", clear_on_submit=True):
         ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
-        submitted = st.form_submit_button("解答（Enter）")  # ← 修正ポイント
+        submitted = st.form_submit_button("解答（Enter）")
 
-    # ✅ 自動フォーカス
     components.html(
         """
         <script>
@@ -80,7 +74,7 @@ if ss.phase == "quiz" and ss.current:
         else:
             ss.last_outcome = ("wrong", current["単語"])
         ss.phase = "feedback"
-        st.rerun()  # ✅ 新仕様
+        st.rerun()
 
 # ==== フィードバック ====
 if ss.phase == "feedback" and ss.last_outcome:
@@ -102,3 +96,35 @@ if ss.phase == "feedback" and ss.last_outcome:
         next_question()
         st.rerun()
 
+# ==== ✅ 画面下に固定された終了ボタン（青系） ====
+components.html(
+    """
+    <div style="
+        position:fixed;
+        bottom:10px;
+        left:0;
+        width:100%;
+        text-align:center;
+        background: white;
+        padding:10px;
+        border-top: 1px solid #ccc;
+        z-index:1000;">
+        <form action="" method="get">
+            <input type="submit" value="アプリを閉じる" 
+                   style="background:#2b6cb0;color:white;padding:10px 20px;
+                          border:none;border-radius:8px;font-size:16px;
+                          cursor:pointer;">
+        </form>
+        <style>
+        input[type=submit]:hover {
+            background:#1e4e8c;
+        }
+        </style>
+    </div>
+    """,
+    height=70,
+)
+
+# ボタンクリックをStreamlit側で処理
+if "アプリを閉じる" in st.session_state:
+    st.stop()
