@@ -46,11 +46,10 @@ def reset_quiz():  # ✅ 再スタート用
     ss.phase = "quiz"
     ss.last_outcome = None
 
-# ==== 全問終了 ====
+# ==== 全問終了（ここでだけ「もう一回」ボタンを表示）====
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
 
-    # ✅ 「もう一回」ボタンは終了画面だけに表示
     if st.button("もう一回"):
         reset_quiz()
         st.rerun()
@@ -66,7 +65,6 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # ✅ 入力フォームのみ（もう一回ボタンは削除）
     with st.form("answer_form", clear_on_submit=True):
         ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
         submitted = st.form_submit_button("解答（Enter）")
