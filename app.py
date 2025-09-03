@@ -40,7 +40,7 @@ def check_answer(ans: str) -> bool:
     word = ss.current["単語"]
     return word.lower().startswith(ans.strip().lower())
 
-def reset_quiz():  # ✅ 追加：再スタート用
+def reset_quiz():  # ✅ 再スタート用
     ss.remaining = df.to_dict("records")
     ss.current = None
     ss.phase = "quiz"
@@ -50,12 +50,10 @@ def reset_quiz():  # ✅ 追加：再スタート用
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
 
-    # ✅ 「もう一回」ボタンを追加（入力欄の右下に配置）
-    col1, col2 = st.columns([3, 1])
-    with col2:
-        if st.button("もう一回"):
-            reset_quiz()
-            st.rerun()
+    # ✅ 「もう一回」ボタンは終了画面だけに表示
+    if st.button("もう一回"):
+        reset_quiz()
+        st.rerun()
 
     st.stop()
 
@@ -68,16 +66,10 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # ✅ 入力欄と「もう一回」ボタンを横並びに配置
+    # ✅ 入力フォームのみ（もう一回ボタンは削除）
     with st.form("answer_form", clear_on_submit=True):
-        cols = st.columns([3, 1])
-        ans = cols[0].text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
-        submitted = cols[0].form_submit_button("解答（Enter）")
-
-        with cols[1]:
-            if st.form_submit_button("もう一回"):  # ← 入力欄の右下
-                reset_quiz()
-                st.rerun()
+        ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
+        submitted = st.form_submit_button("解答（Enter）")
 
     # ✅ 自動フォーカス
     components.html(
