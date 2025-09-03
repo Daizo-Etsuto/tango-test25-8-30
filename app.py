@@ -2,6 +2,7 @@ import random
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+import time  # ✅ 追加：時間計測用
 
 st.title("英単語テスト（CSV版・安定版）")
 
@@ -26,6 +27,7 @@ if "remaining" not in ss: ss.remaining = df.to_dict("records")
 if "current" not in ss: ss.current = None
 if "phase" not in ss: ss.phase = "quiz"   # quiz / feedback / done
 if "last_outcome" not in ss: ss.last_outcome = None
+if "start_time" not in ss: ss.start_time = time.time()  # ✅ 開始時間を記録
 
 def next_question():
     if not ss.remaining:
@@ -45,10 +47,17 @@ def reset_quiz():  # ✅ 再スタート用
     ss.current = None
     ss.phase = "quiz"
     ss.last_outcome = None
+    ss.start_time = time.time()  # ✅ リセット時に開始時間を更新
 
-# ==== 全問終了（ここでだけ「もう一回」ボタンを表示）====
+# ==== 全問終了 ====
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
+
+    # ✅ かかった時間を計算して表示
+    elapsed = int(time.time() - ss.start_time)
+    minutes = elapsed // 60
+    seconds = elapsed % 60
+    st.info(f"所要時間: {minutes}分 {seconds}秒")
 
     if st.button("もう一回"):
         reset_quiz()
