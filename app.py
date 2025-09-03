@@ -40,9 +40,23 @@ def check_answer(ans: str) -> bool:
     word = ss.current["単語"]
     return word.lower().startswith(ans.strip().lower())
 
+def reset_quiz():  # ✅ 追加：再スタート用
+    ss.remaining = df.to_dict("records")
+    ss.current = None
+    ss.phase = "quiz"
+    ss.last_outcome = None
+
 # ==== 全問終了 ====
 if ss.phase == "done":
     st.success("全問正解！お疲れさまでした🎉")
+
+    # ✅ 「もう一回」ボタンを追加（入力欄の右下に配置）
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        if st.button("もう一回"):
+            reset_quiz()
+            st.rerun()
+
     st.stop()
 
 # ==== 新しい問題 ====
@@ -54,10 +68,16 @@ if ss.phase == "quiz" and ss.current:
     current = ss.current
     st.subheader(f"意味: {current['意味']}")
 
-    # ✅ フォームで囲んでレイアウト安定
+    # ✅ 入力欄と「もう一回」ボタンを横並びに配置
     with st.form("answer_form", clear_on_submit=True):
-        ans = st.text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
-        submitted = st.form_submit_button("解答（Enter）")  # ← 修正ポイント
+        cols = st.columns([3, 1])
+        ans = cols[0].text_input("最初の2文字を入力（半角英数字）", max_chars=2, key="answer_box")
+        submitted = cols[0].form_submit_button("解答（Enter）")
+
+        with cols[1]:
+            if st.form_submit_button("もう一回"):  # ← 入力欄の右下
+                reset_quiz()
+                st.rerun()
 
     # ✅ 自動フォーカス
     components.html(
@@ -77,7 +97,7 @@ if ss.phase == "quiz" and ss.current:
         else:
             ss.last_outcome = ("wrong", current["単語"])
         ss.phase = "feedback"
-        st.rerun()  # ✅ 新仕様
+        st.rerun()
 
 # ==== フィードバック ====
 if ss.phase == "feedback" and ss.last_outcome:
